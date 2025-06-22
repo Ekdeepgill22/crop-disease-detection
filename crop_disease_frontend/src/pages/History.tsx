@@ -1,4 +1,4 @@
-import { Layout } from "@/components/Layout";
+import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { History as HistoryIcon, Calendar, Leaf } from "lucide-react";

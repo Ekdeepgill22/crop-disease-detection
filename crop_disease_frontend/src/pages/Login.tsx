@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Layout } from "@/components/Layout";
+import { Layout } from "@/components/layout/Layout";
 import { Leaf, Eye, EyeOff, Mail, Lock } from "lucide-react";
 
 export default function Login() {

@@ -5,8 +5,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Layout } from "@/components/Layout";
+import { Layout } from "@/components/layout/Layout";
 import { Leaf, Eye, EyeOff, Mail, Lock, User, MapPin } from "lucide-react";
+import { z } from "zod";
+
+const registerSchema = z
+  .object({
+    fullName: z.string().min(1, "Full Name is required"),
+    email: z.string().email("Invalid email format"),
+    location: z.string().min(1, "Farm Location is required"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Confirm Password is required"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
