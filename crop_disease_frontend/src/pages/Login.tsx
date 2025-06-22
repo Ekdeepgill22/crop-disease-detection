@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,10 +10,39 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Layout } from "@/components/layout/Layout";
 import { Leaf, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+
+async function loginUser(credentials: any) {
+  const { data } = await api.post("/auth/login", credentials);
+  return data;
+}
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  const mutation = useMutation({
+    mutationFn: loginUser,
+    onSuccess: (data) => {
+      const { user, access_token } = data;
+      login(access_token, user);
+      toast({
+        title: "Login Successful",
+        description: `Welcome back, ${user.fullName}!`,
+      });
+      navigate("/dashboard");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Login Failed",
+        description: error.response?.data?.detail || "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -18,14 +50,7 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      // Here you would implement actual login logic
-      console.log("Login attempt:", formData);
-    }, 2000);
+    mutation.mutate(formData);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,9 +140,9 @@ export default function Login() {
                   type="submit"
                   className="w-full"
                   size="lg"
-                  disabled={isLoading}
+                  disabled={mutation.isPending}
                 >
-                  {isLoading ? "Signing in..." : "Sign In"}
+                  {mutation.isPending ? "Signing in..." : "Sign In"}
                 </Button>
               </form>
 

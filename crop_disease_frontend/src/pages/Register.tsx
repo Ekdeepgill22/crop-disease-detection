@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Layout } from "@/components/layout/Layout";
 import { Leaf, Eye, EyeOff, Mail, Lock, User, MapPin } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 const registerSchema = z
@@ -22,38 +28,49 @@ const registerSchema = z
     path: ["confirmPassword"],
   });
 
+async function registerUser(userData: any) {
+  const { data } = await api.post("/auth/register", userData);
+  return data;
+}
+
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    location: "",
-    password: "",
-    confirmPassword: "",
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  const mutation = useMutation({
+    mutationFn: registerUser,
+    onSuccess: (data) => {
+      const { user, access_token } = data;
+      login(access_token, user);
+      toast({
+        title: "Registration Successful",
+        description: "Your account has been created.",
+      });
+      navigate("/dashboard");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Registration Failed",
+        description: error.response?.data?.detail || "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!agreedToTerms) return;
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(registerSchema),
+  });
 
-    setIsLoading(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      // Here you would implement actual registration logic
-      console.log("Registration attempt:", formData);
-    }, 2000);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+  const onSubmit = (data: any) => {
+    mutation.mutate(data);
   };
 
   return (
@@ -79,21 +96,22 @@ export default function Register() {
             </CardHeader>
 
             <CardContent className="space-y-6">
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="fullName"
-                      name="fullName"
-                      type="text"
                       placeholder="Enter your full name"
-                      value={formData.fullName}
-                      onChange={handleChange}
                       className="pl-10"
-                      required
+                      {...register("fullName")}
                     />
+                    {errors.fullName && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.fullName.message as string}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -103,14 +121,16 @@ export default function Register() {
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="email"
-                      name="email"
                       type="email"
                       placeholder="Enter your email"
-                      value={formData.email}
-                      onChange={handleChange}
                       className="pl-10"
-                      required
+                      {...register("email")}
                     />
+                    {errors.email && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.email.message as string}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -120,14 +140,15 @@ export default function Register() {
                     <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="location"
-                      name="location"
-                      type="text"
                       placeholder="Enter your location"
-                      value={formData.location}
-                      onChange={handleChange}
                       className="pl-10"
-                      required
+                      {...register("location")}
                     />
+                    {errors.location && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.location.message as string}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -137,13 +158,10 @@ export default function Register() {
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="password"
-                      name="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Create a password"
-                      value={formData.password}
-                      onChange={handleChange}
                       className="pl-10 pr-10"
-                      required
+                      {...register("password")}
                     />
                     <button
                       type="button"
@@ -156,6 +174,11 @@ export default function Register() {
                         <Eye className="h-4 w-4" />
                       )}
                     </button>
+                    {errors.password && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.password.message as string}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -165,13 +188,10 @@ export default function Register() {
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="confirmPassword"
-                      name="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm your password"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
                       className="pl-10 pr-10"
-                      required
+                      {...register("confirmPassword")}
                     />
                     <button
                       type="button"
@@ -186,6 +206,11 @@ export default function Register() {
                         <Eye className="h-4 w-4" />
                       )}
                     </button>
+                    {errors.confirmPassword && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.confirmPassword.message as string}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -222,9 +247,9 @@ export default function Register() {
                   type="submit"
                   className="w-full"
                   size="lg"
-                  disabled={isLoading || !agreedToTerms}
+                  disabled={mutation.isPending || !agreedToTerms}
                 >
-                  {isLoading ? "Creating account..." : "Create Account"}
+                  {mutation.isPending ? "Creating account..." : "Create Account"}
                 </Button>
               </form>
 
