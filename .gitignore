@@ -1,0 +1,99 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+crop-env/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# mypy
+.mypy_cache/
+.dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.*
+
+# Database
+*.db
+*.sqlite3
+
+# Uploads and user data
+uploads/
+
+# Logs
+*.log
+
+# Compiled model files
+*.h5
+*.pb
+*.pth
+*.pt
+*.onnx
+
+# Misc
+*.bak
+*.swp
+*~
+
+# Ignore test outputs
+*.out
+
+# Ignore test and temp files
+test_*.py
+*.tmp
+
+# Ignore backup files
+*.bak
+
+# Ignore local scripts
+start.py
+setup.py
+test_kindwise.py
+test_mongodb.py 
