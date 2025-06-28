@@ -334,30 +334,30 @@ export default function Landing() {
             <div className="space-y-4">
               <h4 className="font-semibold">Product</h4>
               <div className="space-y-2 text-gray-400">
-                <div>Disease Detection</div>
-                <div>Treatment Advisory</div>
-                <div>Weather Insights</div>
-                <div>Analytics</div>
+                <Link to="/dashboard" className="hover:underline block">Disease Detection</Link>
+                <Link to="/advisory" className="hover:underline block">Treatment Advisory</Link>
+                <Link to="/advisory" className="hover:underline block">Weather Insights</Link>
+                <Link to="/analytics" className="hover:underline block">Analytics</Link>
               </div>
             </div>
 
             <div className="space-y-4">
               <h4 className="font-semibold">Support</h4>
               <div className="space-y-2 text-gray-400">
-                <div>Help Center</div>
-                <div>Contact Us</div>
-                <div>Documentation</div>
-                <div>Community</div>
+                <Link to="/help" className="hover:underline block">Help Center</Link>
+                <Link to="/contact" className="hover:underline block">Contact Us</Link>
+                <Link to="/docs" className="hover:underline block">Documentation</Link>
+                <Link to="/community" className="hover:underline block">Community</Link>
               </div>
             </div>
 
             <div className="space-y-4">
               <h4 className="font-semibold">Company</h4>
               <div className="space-y-2 text-gray-400">
-                <div>About Us</div>
-                <div>Privacy Policy</div>
-                <div>Terms of Service</div>
-                <div>Careers</div>
+                <Link to="/about" className="hover:underline block">About Us</Link>
+                <Link to="/privacy" className="hover:underline block">Privacy Policy</Link>
+                <Link to="/terms" className="hover:underline block">Terms of Service</Link>
+                <Link to="/careers" className="hover:underline block">Careers</Link>
               </div>
             </div>
           </div>

@@ -12,6 +12,15 @@ import Advisory from "./pages/Advisory";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./contexts/AuthContext";
+import About from "./pages/About";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Careers from "./pages/Careers";
+import Help from "./pages/Help";
+import Contact from "./pages/Contact";
+import Docs from "./pages/Docs";
+import Community from "./pages/Community";
+import Analytics from "./pages/Analytics";
 
 const queryClient = new QueryClient();
 
@@ -34,12 +43,22 @@ const App = () => (
           
           <Route path="/" element={<Landing />} />
 
+          <Route path="/about" element={<About />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/careers" element={<Careers />} />
+          <Route path="/help" element={<Help />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/docs" element={<Docs />} />
+          <Route path="/community" element={<Community />} />
+
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/upload" element={<Dashboard />} />
             <Route path="/history" element={<History />} />
             <Route path="/advisory" element={<Advisory />} />
             <Route path="/profile" element={<Dashboard />} />
+            <Route path="/analytics" element={<Analytics />} />
           </Route>
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

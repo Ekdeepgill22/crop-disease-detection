@@ -72,7 +72,7 @@ export default function Login() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600">
                   <Leaf className="h-7 w-7 text-white" />
                 </div>
-                <span className="text-2xl font-bold">KhetAI</span>
+                <Link to="/" className="text-2xl font-bold hover:underline">KhetAI</Link>
               </div>
               <CardTitle className="text-2xl">Welcome back, farmer!</CardTitle>
               <p className="text-muted-foreground">
