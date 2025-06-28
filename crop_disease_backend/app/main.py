@@ -9,6 +9,7 @@ import os
 from app.database import connect_to_mongo, close_mongo_connection
 from app.routes import auth, disease, advisory, dashboard
 from app.controllers.advisory_controller import AdvisoryController
+from app.config import settings
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -23,12 +24,17 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS middleware
+# CORS middleware - Updated for better frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure properly for production
+    allow_origins=[
+        "http://localhost:8080",
+        "http://localhost:3000", 
+        "http://127.0.0.1:8080",
+        "http://127.0.0.1:3000"
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 

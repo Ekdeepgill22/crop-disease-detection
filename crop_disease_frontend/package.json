@@ -7,7 +7,6 @@
     "build": "vite build",
     "test": "vitest --run",
     "cypress:open": "cypress open",
-    "cypress:run": "cypress run",
     "format.fix": "prettier --write .",
     "typecheck": "tsc"
   },

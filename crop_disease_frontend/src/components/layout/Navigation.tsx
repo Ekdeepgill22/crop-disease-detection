@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -13,6 +13,8 @@ import {
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 
 interface NavigationProps {
   isAuthenticated?: boolean;
@@ -29,6 +31,18 @@ const navigationItems = [
 export function Navigation({ isAuthenticated = false }: NavigationProps) {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+    });
+    navigate("/");
+  };
 
   const NavItems = () => (
     <>
@@ -56,6 +70,7 @@ export function Navigation({ isAuthenticated = false }: NavigationProps) {
       <Button
         variant="ghost"
         className="flex items-center gap-3 justify-start px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent w-full"
+        onClick={handleLogout}
       >
         <LogOut className="h-4 w-4" />
         Logout
@@ -90,7 +105,7 @@ export function Navigation({ isAuthenticated = false }: NavigationProps) {
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/dashboard" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
             <Leaf className="h-5 w-5 text-primary-foreground" />
           </div>
@@ -119,10 +134,17 @@ export function Navigation({ isAuthenticated = false }: NavigationProps) {
               </Link>
             );
           })}
+          
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <User className="h-4 w-4" />
+            <span>{user?.name}</span>
+          </div>
+          
           <Button
             variant="ghost"
             size="sm"
             className="text-muted-foreground hover:text-foreground"
+            onClick={handleLogout}
           >
             <LogOut className="h-4 w-4 mr-2" />
             Logout
@@ -138,6 +160,10 @@ export function Navigation({ isAuthenticated = false }: NavigationProps) {
           </SheetTrigger>
           <SheetContent side="right" className="w-[280px]">
             <div className="flex flex-col gap-4 mt-6">
+              <div className="flex items-center gap-2 text-sm font-medium pb-4 border-b">
+                <User className="h-4 w-4" />
+                <span>{user?.name}</span>
+              </div>
               <NavItems />
             </div>
           </SheetContent>

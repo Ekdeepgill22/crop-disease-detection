@@ -1,6 +1,6 @@
 # disease.py
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Query
-from app.models.diagnosis import PredictionResult, DiagnosisResponse
+from app.models.diagnosis import PredictionResult
 from app.models.user import UserInDB
 from app.controllers.disease_controller import DiseaseController
 from app.utils.auth_utils import get_current_active_user
@@ -18,6 +18,10 @@ async def predict_disease(
     """Upload crop image and get disease prediction using Kindwise API"""
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file uploaded")
+    
+    # Validate file type
+    if not file.content_type or not file.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="File must be an image")
     
     return await disease_controller.predict_disease(file, crop_type, current_user)
 
@@ -45,6 +49,7 @@ async def get_supported_crops():
             "tomato", "potato", "pepper", "corn", "wheat", 
             "rice", "cotton", "soybean", "apple", "grape",
             "cucumber", "lettuce", "carrot", "onion", "garlic",
-            "strawberry", "blueberry", "raspberry", "blackberry"
+            "strawberry", "blueberry", "raspberry", "blackberry",
+            "cabbage", "broccoli", "cauliflower", "spinach", "kale"
         ]
     }
