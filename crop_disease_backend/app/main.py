@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 import logging
 import os
 
-from app.database import connect_to_mongo, close_mongo_connection, ensure_connection
+from app.database import connect_to_mongo, close_mongo_connection, ensure_connection, is_database_connected
 from app.routes import auth, disease, advisory, dashboard
 from app.controllers.advisory_controller import AdvisoryController
 from app.config import settings
@@ -59,16 +59,25 @@ async def startup_event():
     """Initialize database connection and default data"""
     try:
         logger.info("Starting application...")
-        await connect_to_mongo()
         
-        # Initialize default advisories
-        advisory_controller = AdvisoryController()
-        await advisory_controller.initialize_default_advisories()
+        # Try to connect to MongoDB
+        db_connected = await connect_to_mongo()
         
-        logger.info("Application startup completed successfully")
+        if db_connected:
+            # Initialize default advisories only if DB is connected
+            try:
+                advisory_controller = AdvisoryController()
+                await advisory_controller.initialize_default_advisories()
+                logger.info("Default advisories initialized")
+            except Exception as e:
+                logger.warning(f"Failed to initialize default advisories: {e}")
+        else:
+            logger.warning("MongoDB not available - running in fallback mode")
+        
+        logger.info("Application startup completed")
     except Exception as e:
-        logger.error(f"Startup failed: {e}")
-        raise
+        logger.error(f"Startup error: {e}")
+        # Don't fail startup if DB is not available
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -94,15 +103,33 @@ async def root():
     return {
         "message": "Crop Disease Detection API",
         "version": "1.0.0",
-        "docs": "/docs"
+        "docs": "/docs",
+        "database_status": "connected" if is_database_connected() else "disconnected"
     }
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
     try:
-        await ensure_connection()
-        return {"status": "healthy", "database": "connected"}
+        if is_database_connected():
+            await ensure_connection()
+            return {
+                "status": "healthy", 
+                "database": "connected",
+                "mongodb_url": settings.MONGODB_URL.replace("mongodb://", "mongodb://***:***@") if "://" in settings.MONGODB_URL else "***"
+            }
+        else:
+            return {
+                "status": "degraded", 
+                "database": "disconnected",
+                "message": "API is functional but database is not available",
+                "mongodb_url": settings.MONGODB_URL.replace("mongodb://", "mongodb://***:***@") if "://" in settings.MONGODB_URL else "***"
+            }
     except Exception as e:
         logger.error(f"Health check failed: {e}")
-        return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
+        return {
+            "status": "unhealthy", 
+            "database": "error", 
+            "error": str(e),
+            "mongodb_url": settings.MONGODB_URL.replace("mongodb://", "mongodb://***:***@") if "://" in settings.MONGODB_URL else "***"
+        }
