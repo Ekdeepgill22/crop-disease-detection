@@ -7,10 +7,11 @@ from bson import ObjectId
 
 class DashboardController:
     def __init__(self):
-        self.db = get_database()
+        pass
     
     async def get_user_diagnosis_history(self, current_user: UserInDB, limit: int = 50) -> List[DiagnosisResponse]:
         """Get diagnosis history for a user"""
+        self.db = get_database()
         try:
             cursor = self.db.diagnoses.find(
                 {"user_id": ObjectId(current_user.id)}
@@ -34,6 +35,7 @@ class DashboardController:
     
     async def get_user_statistics(self, current_user: UserInDB) -> dict:
         """Get user statistics"""
+        self.db = get_database()
         try:
             # Total diagnoses
             total_diagnoses = await self.db.diagnoses.count_documents(
