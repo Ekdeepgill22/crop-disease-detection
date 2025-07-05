@@ -7,9 +7,11 @@ from bson import ObjectId
 
 class DashboardController:
     def __init__(self):
-        self.db = get_database()
+       pass
     
     async def get_user_diagnosis_history(self, current_user: UserInDB, limit: int = 50) -> List[DiagnosisResponse]:
+        self.db = get_database()
+        
         """Get diagnosis history for a user"""
         try:
             cursor = self.db.diagnoses.find(
@@ -33,6 +35,7 @@ class DashboardController:
             raise Exception(f"Failed to fetch diagnosis history: {str(e)}")
     
     async def get_user_statistics(self, current_user: UserInDB) -> dict:
+        self.db = get_database()
         """Get user statistics"""
         try:
             # Total diagnoses

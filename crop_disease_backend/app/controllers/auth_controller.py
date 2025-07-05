@@ -9,8 +9,8 @@ from pymongo.errors import DuplicateKeyError
 
 class AuthController:
     def __init__(self):
-        self.db = get_database()
-    
+        pass
+       
     async def register_user(self, user_data: UserCreate) -> UserResponse:
         """Register a new user"""
         try:
@@ -29,7 +29,24 @@ class AuthController:
             # Get created user
             created_user = await self.db.users.find_one({"_id": result.inserted_id})
             
-            return UserResponse(**created_user, id=str(created_user["_id"]))
+            if not created_user:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to retrieve created user"
+                )
+            
+            # Convert MongoDB document to UserResponse
+            user_response_data = {
+                "id": str(created_user["_id"]),
+                "name": created_user["name"],
+                "email": created_user["email"],
+                "phone_number": created_user["phone_number"],
+                "region": created_user["region"],
+                "is_active": created_user.get("is_active", True),
+                "created_at": created_user.get("created_at")
+            }
+            
+            return UserResponse(**user_response_data)
             
         except DuplicateKeyError:
             raise HTTPException(
@@ -43,6 +60,7 @@ class AuthController:
             )
     
     async def login_user(self, login_data: UserLogin) -> Token:
+        self.db = get_database()
         """Authenticate user and return token"""
         user = await self.db.users.find_one({"email": login_data.email})
         
