@@ -29,6 +29,9 @@ async def connect_to_mongo():
     except ConnectionFailure as e:
         logger.error(f"Failed to connect to MongoDB: {e}")
         raise
+    except Exception as e:
+        logger.error(f"Unexpected error connecting to MongoDB: {e}")
+        raise
 
 async def close_mongo_connection():
     """Close database connection"""
@@ -36,16 +39,16 @@ async def close_mongo_connection():
         database.client.close()
         logger.info("MongoDB connection closed")
 
-def _get_db() -> AsyncIOMotorDatabase:
+def get_database() -> AsyncIOMotorDatabase:
     """Get database instance with proper error handling"""
     if database.database is None:
-        raise ConnectionError("Database connection not available")
+        raise ConnectionError("Database connection not available. Please ensure MongoDB is running and properly configured.")
     return database.database
 
 async def create_indexes():
     """Create database indexes for better performance"""
     try:
-        db = _get_db()
+        db = get_database()
         
         # User collection indexes
         await db.users.create_index("email", unique=True)
@@ -59,5 +62,15 @@ async def create_indexes():
     except Exception as e:
         logger.error(f"Error creating indexes: {e}")
 
-def get_database() -> Optional[AsyncIOMotorDatabase]:
-    return database.database
+async def ensure_connection():
+    """Ensure database connection is active"""
+    try:
+        if database.database is None:
+            await connect_to_mongo()
+        else:
+            # Test if connection is still alive
+            await database.client.admin.command('ping')
+    except Exception as e:
+        logger.error(f"Database connection test failed: {e}")
+        # Try to reconnect
+        await connect_to_mongo()

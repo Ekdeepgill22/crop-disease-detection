@@ -6,13 +6,16 @@ from fastapi.responses import JSONResponse
 import logging
 import os
 
-from app.database import connect_to_mongo, close_mongo_connection
+from app.database import connect_to_mongo, close_mongo_connection, ensure_connection
 from app.routes import auth, disease, advisory, dashboard
 from app.controllers.advisory_controller import AdvisoryController
 from app.config import settings
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 # Create FastAPI app
@@ -54,24 +57,32 @@ app.include_router(dashboard.router)
 @app.on_event("startup")
 async def startup_event():
     """Initialize database connection and default data"""
-    await connect_to_mongo()
-    
-    # Initialize default advisories
-    advisory_controller = AdvisoryController()
-    await advisory_controller.initialize_default_advisories()
-    
-    logger.info("Application startup completed")
+    try:
+        logger.info("Starting application...")
+        await connect_to_mongo()
+        
+        # Initialize default advisories
+        advisory_controller = AdvisoryController()
+        await advisory_controller.initialize_default_advisories()
+        
+        logger.info("Application startup completed successfully")
+    except Exception as e:
+        logger.error(f"Startup failed: {e}")
+        raise
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Clean up database connection"""
-    await close_mongo_connection()
-    logger.info("Application shutdown completed")
+    try:
+        await close_mongo_connection()
+        logger.info("Application shutdown completed")
+    except Exception as e:
+        logger.error(f"Shutdown error: {e}")
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Global exception handler"""
-    logger.error(f"Global exception: {str(exc)}")
+    logger.error(f"Global exception on {request.url}: {str(exc)}")
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error"}
@@ -89,4 +100,9 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "healthy"}
+    try:
+        await ensure_connection()
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return {"status": "unhealthy", "database": "disconnected", "error": str(e)}

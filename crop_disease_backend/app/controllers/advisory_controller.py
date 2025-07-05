@@ -1,28 +1,46 @@
 # advisory_controller.py
 from typing import Optional, List, Dict, Any
-from app.database import get_database
+from app.database import get_database, ensure_connection
 from app.models.advisory import Advisory, Treatment, WeatherAdvice
 from app.utils.weather_utils import get_weather_data, generate_weather_advice
 from bson import ObjectId
+import logging
+
+logger = logging.getLogger(__name__)
 
 class AdvisoryController:
-    def __init__(self):
-        self.db = get_database()
+    async def _get_db(self):
+        """Get database instance with proper error handling"""
+        try:
+            await ensure_connection()
+            return get_database()
+        except Exception as e:
+            logger.error(f"Database connection error in advisory controller: {e}")
+            raise
     
     async def get_advisory_by_disease(self, disease_name: str, crop_type: str) -> Optional[Advisory]:
         """Get advisory for specific disease and crop type"""
-        advisory = await self.db.advisories.find_one({
-            "disease_name": disease_name,
-            "crop_type": crop_type
-        })
-        
-        if not advisory:
-            # Return default advisory if specific not found
-            advisory = await self.get_default_advisory(disease_name)
-        
-        if advisory:
-            return Advisory(**advisory)
-        return None
+        try:
+            db = await self._get_db()
+            advisory = await db.advisories.find_one({
+                "disease_name": disease_name,
+                "crop_type": crop_type
+            })
+            
+            if not advisory:
+                # Return default advisory if specific not found
+                advisory = await self.get_default_advisory(disease_name)
+            
+            if advisory:
+                return Advisory(**advisory)
+            return None
+        except Exception as e:
+            logger.error(f"Error getting advisory: {e}")
+            # Return default advisory as fallback
+            default_advisory = await self.get_default_advisory(disease_name)
+            if default_advisory:
+                return Advisory(**default_advisory)
+            return None
     
     async def get_default_advisory(self, disease_name: str) -> Optional[Dict[str, Any]]:
         """Get default advisory for disease (fallback)"""
@@ -80,34 +98,41 @@ class AdvisoryController:
     
     async def initialize_default_advisories(self):
         """Initialize database with default advisories"""
-        default_advisories = [
-            {
-                "disease_name": "Bacterial_Spot",
-                "crop_type": "Tomato",
-                "severity": "moderate",
-                "description": "Bacterial spot is a common disease affecting tomato plants.",
-                "symptoms": ["Small dark spots on leaves", "Water-soaked lesions", "Fruit spotting"],
-                "treatment_steps": [
-                    {"step": 1, "description": "Remove affected leaves immediately", "materials_needed": ["Sterile pruning shears", "Disinfectant"]},
-                    {"step": 2, "description": "Apply copper-based bactericide", "materials_needed": ["Copper bactericide", "Sprayer"]},
-                    {"step": 3, "description": "Improve ventilation around plants", "materials_needed": ["Stakes", "Ties"]}
-                ],
-                "recommended_pesticide": "Copper hydroxide spray",
-                "recommended_fertilizer": "Low nitrogen, high potassium fertilizer",
-                "prevention_tips": [
-                    "Avoid overhead irrigation",
-                    "Practice crop rotation",
-                    "Use certified disease-free seeds",
-                    "Maintain proper plant spacing"
-                ],
-                "estimated_recovery_time": "2-3 weeks with proper treatment"
-            }
-        ]
-        
-        for advisory in default_advisories:
-            existing = await self.db.advisories.find_one({
-                "disease_name": advisory["disease_name"],
-                "crop_type": advisory["crop_type"]
-            })
-            if not existing:
-                await self.db.advisories.insert_one(advisory)
+        try:
+            db = await self._get_db()
+            
+            default_advisories = [
+                {
+                    "disease_name": "Bacterial_Spot",
+                    "crop_type": "Tomato",
+                    "severity": "moderate",
+                    "description": "Bacterial spot is a common disease affecting tomato plants.",
+                    "symptoms": ["Small dark spots on leaves", "Water-soaked lesions", "Fruit spotting"],
+                    "treatment_steps": [
+                        {"step": 1, "description": "Remove affected leaves immediately", "materials_needed": ["Sterile pruning shears", "Disinfectant"]},
+                        {"step": 2, "description": "Apply copper-based bactericide", "materials_needed": ["Copper bactericide", "Sprayer"]},
+                        {"step": 3, "description": "Improve ventilation around plants", "materials_needed": ["Stakes", "Ties"]}
+                    ],
+                    "recommended_pesticide": "Copper hydroxide spray",
+                    "recommended_fertilizer": "Low nitrogen, high potassium fertilizer",
+                    "prevention_tips": [
+                        "Avoid overhead irrigation",
+                        "Practice crop rotation",
+                        "Use certified disease-free seeds",
+                        "Maintain proper plant spacing"
+                    ],
+                    "estimated_recovery_time": "2-3 weeks with proper treatment"
+                }
+            ]
+            
+            for advisory in default_advisories:
+                existing = await db.advisories.find_one({
+                    "disease_name": advisory["disease_name"],
+                    "crop_type": advisory["crop_type"]
+                })
+                if not existing:
+                    await db.advisories.insert_one(advisory)
+                    
+            logger.info("Default advisories initialized successfully")
+        except Exception as e:
+            logger.error(f"Error initializing default advisories: {e}")
