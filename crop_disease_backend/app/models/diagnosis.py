@@ -14,7 +14,7 @@ class DiagnosisCreate(BaseModel):
 
 class DiagnosisInDB(BaseModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
-    user_id: PyObjectId
+    user_id: str
     crop_type: str
     image_path: str
     image_url: str

@@ -43,7 +43,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     
     try:
         payload = jwt.decode(credentials.credentials, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        email: str = payload.get("sub")
+        email = payload.get("sub")
         if email is None:
             raise credentials_exception
         token_data = TokenData(email=email)
@@ -54,7 +54,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     user = await db.users.find_one({"email": token_data.email})
     if user is None:
         raise credentials_exception
-    
+    user["_id"] = str(user["_id"])
     return UserInDB(**user)
 
 async def get_current_active_user(current_user: UserInDB = Depends(get_current_user)):

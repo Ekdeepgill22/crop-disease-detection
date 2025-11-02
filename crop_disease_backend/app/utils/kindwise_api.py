@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class KindwiseAPI:
     def __init__(self):
         self.api_key = settings.KINDWISE_API_KEY
-        self.base_url = "https://api.kindwise.com/v1"
+        self.base_url = "https://crop.kindwise.com/api/v1"
         self.headers = {
             "Api-Key": self.api_key,
             "Content-Type": "application/json"
@@ -57,14 +57,8 @@ class KindwiseAPI:
             # Prepare request payload
             payload = {
                 "images": [image_base64],
-                "modifiers": ["health_all", "disease_similar_images"],
-                "plant_details": ["common_names", "url", "wiki_description", "taxonomy"]
+                "similar_images": True
             }
-            
-            # Add crop type if provided
-            if crop_type:
-                payload["plant_details"].append("common_names")
-                payload["modifiers"].append("crop_specific")
             
             # Make API request
             response = requests.post(
@@ -74,26 +68,27 @@ class KindwiseAPI:
                 timeout=30
             )
             
-            if response.status_code != 200:
+            if response.status_code not in (200, 201):
                 logger.error(f"Kindwise API error: {response.status_code} - {response.text}")
-                # Fall back to mock data on API error
-                return self._get_mock_prediction(crop_type)
+                raise Exception(f"Kindwise API error: {response.status_code} - {response.text}")
+            logger.info(f"Kindwise API success: {response.status_code} - {response.text}")
             
             result = response.json()
             
             # Parse the response
-            if not result.get("result") or not result["result"].get("classification"):
-                logger.warning("No classification results found, using mock data")
+            if not result.get("result") or not result["result"].get("disease"):
+                logger.warning("No disease results found, using mock data")
                 return self._get_mock_prediction(crop_type)
             
-            classification = result["result"]["classification"]
+            classification = result["result"]["disease"]
             
             # Get the best match
             if not classification.get("suggestions"):
                 logger.warning("No disease suggestions found, using mock data")
                 return self._get_mock_prediction(crop_type)
             
-            best_match = classification["suggestions"][0]
+            suggestions = classification["suggestions"]
+            best_match = max(suggestions, key=lambda s: s.get("probability", 0.0))
             disease_name = best_match.get("name", "Unknown Disease")
             confidence = best_match.get("probability", 0.0)
             
@@ -132,7 +127,7 @@ class KindwiseAPI:
         # Default diseases if crop type not found
         default_diseases = ["Early_Blight", "Bacterial_Spot", "Leaf_Spot", "Powdery_Mildew"]
         
-        diseases = crop_diseases.get(crop_type, default_diseases)
+        diseases = crop_diseases.get(crop_type or "unknown", default_diseases)
         disease_name = random.choice(diseases)
         confidence = random.uniform(0.75, 0.95)  # High confidence for demo
         

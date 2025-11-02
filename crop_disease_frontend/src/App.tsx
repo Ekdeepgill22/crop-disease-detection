@@ -12,6 +12,8 @@ import Advisory from "./pages/Advisory";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./contexts/AuthContext";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -20,32 +22,89 @@ function AuthRedirect() {
   return isAuthenticated ? <Navigate to="/dashboard" /> : <Outlet />;
 }
 
+const routes = [
+  {
+    path: "/",
+    element: <Landing />
+  },
+  {
+    path: "/login",
+    element: <AuthRedirect />,
+    children: [
+      {
+        index: true,
+        element: <Login />
+      },
+      {
+        path: "register",
+        element: <Register />
+      }
+    ]
+  },
+  {
+    path: "/register",
+    element: <AuthRedirect />,
+    children: [
+      {
+        index: true,
+        element: <Register />
+      }
+    ]
+  },
+  {
+    path: "/dashboard",
+    element: <ProtectedRoute />,
+    children: [
+      {
+        index: true,
+        element: <Dashboard />
+      }
+    ]
+  },
+  {
+    path: "/history",
+    element: <ProtectedRoute />,
+    children: [
+      {
+        index: true,
+        element: <History />
+      }
+    ]
+  },
+  {
+    path: "/advisory",
+    element: <ProtectedRoute />,
+    children: [
+      {
+        index: true,
+        element: <Advisory />
+      }
+    ]
+  },
+  {
+    path: "/profile",
+    element: <ProtectedRoute />,
+    children: [
+      {
+        index: true,
+        element: <Profile />
+      }
+    ]
+  },
+  {
+    path: "*",
+    element: <NotFound />
+  }
+];
+
+const router = createBrowserRouter(routes);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route element={<AuthRedirect />}>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-          </Route>
-          
-          <Route path="/" element={<Landing />} />
-
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/upload" element={<Dashboard />} />
-            <Route path="/history" element={<History />} />
-            <Route path="/advisory" element={<Advisory />} />
-            <Route path="/profile" element={<Dashboard />} />
-          </Route>
-
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <RouterProvider router={router} />
     </TooltipProvider>
   </QueryClientProvider>
 );

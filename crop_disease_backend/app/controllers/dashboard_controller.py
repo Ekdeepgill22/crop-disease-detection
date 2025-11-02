@@ -4,6 +4,7 @@ from app.database import get_database
 from app.models.user import UserInDB
 from app.models.diagnosis import DiagnosisResponse
 from bson import ObjectId
+from app.controllers.disease_controller import convert_objectids_to_str
 
 class DashboardController:
     def __init__(self):
@@ -15,19 +16,20 @@ class DashboardController:
         """Get diagnosis history for a user"""
         try:
             cursor = self.db.diagnoses.find(
-                {"user_id": ObjectId(current_user.id)}
+                {"user_id": str(current_user.id)}
             ).sort("created_at", -1).limit(limit)
             
             diagnoses = []
             async for diagnosis in cursor:
+                doc = convert_objectids_to_str(diagnosis)
                 diagnoses.append(DiagnosisResponse(
-                    id=str(diagnosis["_id"]),
-                    crop_type=diagnosis["crop_type"],
-                    image_url=diagnosis["image_url"],
-                    predicted_disease=diagnosis["predicted_disease"],
-                    confidence_score=diagnosis["confidence_score"],
-                    advisory=diagnosis.get("advisory"),
-                    created_at=diagnosis["created_at"]
+                    id=doc["_id"],
+                    crop_type=doc["crop_type"],
+                    image_url=doc["image_url"],
+                    predicted_disease=doc["predicted_disease"],
+                    confidence_score=doc["confidence_score"],
+                    advisory=doc.get("advisory"),
+                    created_at=doc["created_at"]
                 ))
             
             return diagnoses
@@ -40,12 +42,12 @@ class DashboardController:
         try:
             # Total diagnoses
             total_diagnoses = await self.db.diagnoses.count_documents(
-                {"user_id": ObjectId(current_user.id)}
+                {"user_id": str(current_user.id)}
             )
             
             # Most common diseases
             pipeline = [
-                {"$match": {"user_id": ObjectId(current_user.id)}},
+                {"$match": {"user_id": str(current_user.id)}},
                 {"$group": {"_id": "$predicted_disease", "count": {"$sum": 1}}},
                 {"$sort": {"count": -1}},
                 {"$limit": 5}

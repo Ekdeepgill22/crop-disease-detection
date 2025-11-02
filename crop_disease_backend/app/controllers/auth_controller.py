@@ -13,6 +13,7 @@ class AuthController:
        
     async def register_user(self, user_data: UserCreate) -> UserResponse:
         """Register a new user"""
+        self.db = get_database()
         try:
             # Hash password
             hashed_password = get_password_hash(user_data.password)

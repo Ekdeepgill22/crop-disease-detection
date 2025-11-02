@@ -5,6 +5,7 @@ from app.models.advisory import Advisory, Treatment, WeatherAdvice
 from app.utils.weather_utils import get_weather_data, generate_weather_advice
 from bson import ObjectId
 import logging
+from app.utils.mongo_utils import convert_objectids_to_str
 
 logger = logging.getLogger(__name__)
 
@@ -23,17 +24,31 @@ class AdvisoryController:
         try:
             db = await self._get_db()
             advisory = await db.advisories.find_one({
-                "disease_name": disease_name,
+                "disease_name": {"$regex": f"^{disease_name}$", "$options": "i"},
                 "crop_type": crop_type
             })
             
             if not advisory:
-                # Return default advisory if specific not found
-                advisory = await self.get_default_advisory(disease_name)
-            
-            if advisory:
-                return Advisory(**advisory)
-            return None
+                # Only return the default advisory if there are no advisories in the collection for this disease/crop
+                count = await db.advisories.count_documents({})
+                if count <= 1:
+                    # Only one (default) advisory exists, so return it as fallback
+                    advisory = await self.get_default_advisory(disease_name)
+                    if advisory:
+                        return Advisory(**advisory)
+                    return None
+                else:
+                    # Do not return the default advisory if there are other advisories in the DB
+                    return None
+            advisory = convert_objectids_to_str(advisory)
+            # Filter out empty/blank treatment steps and prevention tips
+            if 'treatment_steps' in advisory:
+                advisory['treatment_steps'] = [step for step in advisory['treatment_steps'] if step.get('description', '').strip()]
+            if 'prevention_tips' in advisory:
+                advisory['prevention_tips'] = [tip for tip in advisory['prevention_tips'] if tip and tip.strip()]
+            if not advisory.get('description') or not advisory['description'].strip():
+                advisory['description'] = 'No description available.'
+            return Advisory(**advisory)
         except Exception as e:
             logger.error(f"Error getting advisory: {e}")
             # Return default advisory as fallback

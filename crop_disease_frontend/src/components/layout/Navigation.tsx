@@ -22,7 +22,6 @@ interface NavigationProps {
 
 const navigationItems = [
   { href: "/dashboard", icon: BarChart3, label: "Dashboard" },
-  { href: "/upload", icon: Upload, label: "Upload Image" },
   { href: "/history", icon: History, label: "History" },
   { href: "/advisory", icon: BookOpen, label: "Advisory" },
   { href: "/profile", icon: User, label: "Profile" },
@@ -134,12 +133,6 @@ export function Navigation({ isAuthenticated = false }: NavigationProps) {
               </Link>
             );
           })}
-          
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <User className="h-4 w-4" />
-            <span>{user?.name}</span>
-          </div>
-          
           <Button
             variant="ghost"
             size="sm"
@@ -160,10 +153,6 @@ export function Navigation({ isAuthenticated = false }: NavigationProps) {
           </SheetTrigger>
           <SheetContent side="right" className="w-[280px]">
             <div className="flex flex-col gap-4 mt-6">
-              <div className="flex items-center gap-2 text-sm font-medium pb-4 border-b">
-                <User className="h-4 w-4" />
-                <span>{user?.name}</span>
-              </div>
               <NavItems />
             </div>
           </SheetContent>

@@ -9,6 +9,11 @@ from app.config import settings
 def validate_image(file: UploadFile) -> None:
     """Validate uploaded image file"""
     # Check file extension
+    if file.filename is None:
+        raise HTTPException(
+            status_code=400,
+            detail="No filename provided"
+        )
     file_extension = os.path.splitext(file.filename)[1].lower()
     if file_extension not in settings.ALLOWED_EXTENSIONS:
         raise HTTPException(
@@ -17,6 +22,11 @@ def validate_image(file: UploadFile) -> None:
         )
     
     # Check file size
+    if file.size is None:
+        raise HTTPException(
+            status_code=400,
+            detail="File size could not be determined"
+        )
     if file.size > settings.MAX_FILE_SIZE:
         raise HTTPException(
             status_code=400,
@@ -27,13 +37,15 @@ async def save_image(file: UploadFile) -> Tuple[str, str]:
     """Save uploaded image and return file path and URL"""
     validate_image(file)
     
-    # Create upload directory if it doesn't exist
-    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    
+    # Always use the backend's uploads/images directory (absolute path)
+    backend_dir = os.path.dirname(os.path.abspath(__file__))
+    uploads_dir = os.path.join(backend_dir, "..", "..", "uploads", "images")
+    os.makedirs(uploads_dir, exist_ok=True)
     # Generate unique filename
+    assert file.filename is not None  # Type guard for mypy
     file_extension = os.path.splitext(file.filename)[1].lower()
     unique_filename = f"{uuid.uuid4()}{file_extension}"
-    file_path = os.path.join(settings.UPLOAD_DIR, unique_filename)
+    file_path = os.path.join(uploads_dir, unique_filename)
     
     # Save file
     contents = await file.read()

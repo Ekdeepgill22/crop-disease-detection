@@ -18,20 +18,22 @@ async function fetchWeatherAdvisory() {
       weather_condition: "partly_cloudy",
       planting_advice: "Good conditions for planting most crops",
       irrigation_advice: "Maintain regular watering schedule",
-      pest_risk: "Low risk of pest activity"
+      pest_risk: "Low risk of pest activity",
+      humidity_advice: "Humidity is low. Plants may need extra irrigation."
     };
   }
 }
 
-async function fetchDiseaseAdvisory(diseaseName: string) {
+async function fetchDiseaseAdvisory(diseaseName: string, cropType: string) {
   try {
-    const { data } = await api.get(`/advisory/disease/${diseaseName}`);
+    const { data } = await api.get(`/advisory/disease/${diseaseName}?crop_type=${cropType}`);
     return data;
   } catch (error) {
     // Return mock advisory data if API fails
     return {
       disease_name: diseaseName,
-      description: `Treatment information for ${diseaseName.replace(/_/g, ' ')}`,
+      crop_type: cropType,
+      description: `Treatment information for ${diseaseName.replace(/_/g, ' ')} (${cropType})`,
       symptoms: [
         "Visible spots or lesions on leaves",
         "Discoloration of plant tissue",
@@ -65,20 +67,48 @@ async function fetchDiseaseAdvisory(diseaseName: string) {
   }
 }
 
+async function fetchDiagnosisById(diagnosisId: string) {
+  const { data } = await api.get(`/disease/diagnosis/${diagnosisId}`);
+  return data;
+}
+
+function getPestRiskLevel(pestRisk) {
+  if (!pestRisk) return '';
+  const risk = pestRisk.toLowerCase();
+  if (risk.includes('high')) return 'High';
+  if (risk.includes('medium')) return 'Medium';
+  if (risk.includes('low')) return 'Low';
+  return '';
+}
+
 export default function Advisory() {
   const [searchParams] = useSearchParams();
   const diseaseName = searchParams.get("disease");
+  const cropType = searchParams.get("crop_type");
+  const diagnosisId = searchParams.get("diagnosis_id");
 
   const { data: weatherData, isLoading: isLoadingWeather } = useQuery({
     queryKey: ["weatherAdvisory"],
     queryFn: fetchWeatherAdvisory,
   });
 
-  const { data: diseaseData, isLoading: isLoadingDisease } = useQuery({
-    queryKey: ["diseaseAdvisory", diseaseName],
-    queryFn: () => fetchDiseaseAdvisory(diseaseName!),
-    enabled: !!diseaseName,
+  // If diagnosisId is present, fetch diagnosis and use its advisory
+  const { data: diagnosisData, isLoading: isLoadingDiagnosis } = useQuery({
+    queryKey: ["diagnosisAdvisory", diagnosisId],
+    queryFn: () => fetchDiagnosisById(diagnosisId!),
+    enabled: !!diagnosisId,
   });
+
+  // If no diagnosisId, fall back to disease name
+  const { data: diseaseData, isLoading: isLoadingDisease } = useQuery({
+    queryKey: ["diseaseAdvisory", diseaseName, cropType],
+    queryFn: () => fetchDiseaseAdvisory(diseaseName!, cropType!),
+    enabled: !!diseaseName && !!cropType && !diagnosisId,
+  });
+
+  // Choose advisory data
+  const advisoryData = diagnosisId ? diagnosisData?.advisory : diseaseData;
+  const isLoadingAdvisory = diagnosisId ? isLoadingDiagnosis : isLoadingDisease;
 
   return (
     <Layout isAuthenticated={true}>
@@ -116,27 +146,36 @@ export default function Advisory() {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      <div className="text-center p-4 bg-orange-50 rounded-lg">
-                        <Thermometer className="h-8 w-8 text-orange-500 mx-auto mb-2" />
+                    {/* 4-column weather summary */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                      <div className="text-center p-4 bg-orange-50 rounded-lg flex flex-col items-center">
+                        <Thermometer className="h-8 w-8 text-orange-500 mb-2" />
                         <p className="text-sm text-muted-foreground">Temperature</p>
                         <p className="text-lg font-semibold">{weatherData?.temperature}°C</p>
                       </div>
-                      <div className="text-center p-4 bg-blue-50 rounded-lg">
-                        <Droplets className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+                      <div className="text-center p-4 bg-blue-50 rounded-lg flex flex-col items-center">
+                        <Droplets className="h-8 w-8 text-blue-500 mb-2" />
                         <p className="text-sm text-muted-foreground">Humidity</p>
                         <p className="text-lg font-semibold">{weatherData?.humidity}%</p>
                       </div>
-                      <div className="text-center p-4 bg-gray-50 rounded-lg col-span-2 md:col-span-1">
-                        <CloudRain className="h-8 w-8 text-gray-500 mx-auto mb-2" />
+                      <div className="text-center p-4 bg-gray-50 rounded-lg flex flex-col items-center">
+                        <CloudRain className="h-8 w-8 text-gray-500 mb-2" />
                         <p className="text-sm text-muted-foreground">Condition</p>
                         <p className="text-lg font-semibold capitalize">
                           {weatherData?.weather_condition?.replace(/_/g, ' ')}
                         </p>
                       </div>
+                      <div className="text-center p-4 bg-yellow-50 rounded-lg flex flex-col items-center">
+                        <AlertCircle className="h-8 w-8 text-yellow-700 mb-2" />
+                        <p className="text-sm text-muted-foreground">Pest Risk</p>
+                        <p className="text-lg font-semibold capitalize">
+                          {getPestRiskLevel(weatherData?.pest_risk)}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-4">
+                    {/* 4-column advice row (add Pest Risk here) */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div className="bg-green-50 p-4 rounded-lg">
                         <h4 className="font-medium text-green-800 mb-2">Planting Advice</h4>
                         <p className="text-sm text-green-700">{weatherData?.planting_advice}</p>
@@ -144,6 +183,10 @@ export default function Advisory() {
                       <div className="bg-blue-50 p-4 rounded-lg">
                         <h4 className="font-medium text-blue-800 mb-2">Irrigation</h4>
                         <p className="text-sm text-blue-700">{weatherData?.irrigation_advice}</p>
+                      </div>
+                      <div className="bg-orange-50 p-4 rounded-lg">
+                        <h4 className="font-medium text-orange-800 mb-2">Humidity Advice</h4>
+                        <p className="text-sm text-orange-700">{weatherData?.humidity_advice}</p>
                       </div>
                       <div className="bg-yellow-50 p-4 rounded-lg">
                         <h4 className="font-medium text-yellow-800 mb-2">Pest Risk</h4>
@@ -156,54 +199,36 @@ export default function Advisory() {
             </Card>
 
             {/* Disease Advisory */}
-            {diseaseName && (
+            {(diseaseName || diagnosisId) && (
               <Card className="bg-white/90 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <AlertCircle className="h-5 w-5 text-red-600" />
-                    Treatment Advisory: {diseaseName.replace(/_/g, " ")}
+                    Treatment Advisory
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {isLoadingDisease ? (
+                  {isLoadingAdvisory ? (
                     <div className="flex justify-center items-center py-8">
                       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
-                  ) : diseaseData ? (
+                  ) : advisoryData ? (
                     <div className="space-y-6">
                       {/* Description */}
                       <div className="bg-red-50 p-4 rounded-lg">
                         <h4 className="font-medium text-red-800 mb-2">Disease Information</h4>
-                        <p className="text-sm text-red-700">{diseaseData.description}</p>
+                        <p className="text-sm text-red-700">{advisoryData.description}</p>
                       </div>
 
-                      {/* Symptoms */}
-                      {diseaseData.symptoms && (
-                        <div>
-                          <h4 className="font-medium mb-3 flex items-center gap-2">
-                            <AlertCircle className="h-4 w-4 text-orange-600" />
-                            Symptoms to Look For
-                          </h4>
-                          <ul className="space-y-2">
-                            {diseaseData.symptoms.map((symptom: string, index: number) => (
-                              <li key={index} className="flex items-start gap-2 text-sm">
-                                <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-                                {symptom}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
                       {/* Treatment Steps */}
-                      {diseaseData.treatment_steps && (
+                      {advisoryData.treatment_steps && (
                         <div>
                           <h4 className="font-medium mb-3 flex items-center gap-2">
                             <CheckCircle className="h-4 w-4 text-green-600" />
                             Treatment Steps
                           </h4>
                           <ol className="space-y-4">
-                            {diseaseData.treatment_steps.map((step: any, index: number) => (
+                            {advisoryData.treatment_steps.map((step: any, index: number) => (
                               <li key={index} className="flex gap-4">
                                 <div className="flex-shrink-0 w-8 h-8 bg-green-100 text-green-800 rounded-full flex items-center justify-center text-sm font-medium">
                                   {step.step}
@@ -223,25 +248,17 @@ export default function Advisory() {
                       )}
 
                       {/* Prevention Tips */}
-                      {diseaseData.prevention_tips && (
+                      {advisoryData.prevention_tips && (
                         <div>
                           <h4 className="font-medium mb-3">Prevention Tips</h4>
                           <ul className="space-y-2">
-                            {diseaseData.prevention_tips.map((tip: string, index: number) => (
+                            {advisoryData.prevention_tips.map((tip: string, index: number) => (
                               <li key={index} className="flex items-start gap-2 text-sm">
                                 <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                                 {tip}
                               </li>
                             ))}
                           </ul>
-                        </div>
-                      )}
-
-                      {/* Recovery Time */}
-                      {diseaseData.estimated_recovery_time && (
-                        <div className="bg-blue-50 p-4 rounded-lg">
-                          <h4 className="font-medium text-blue-800 mb-2">Expected Recovery Time</h4>
-                          <p className="text-sm text-blue-700">{diseaseData.estimated_recovery_time}</p>
                         </div>
                       )}
                     </div>

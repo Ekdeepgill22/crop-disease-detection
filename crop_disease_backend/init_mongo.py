@@ -1,7 +1,8 @@
 from pymongo import MongoClient
+import os 
 
 # Update this if your MongoDB is not running locally or uses authentication
-MONGO_URL = "mongodb://localhost:27017"
+MONGO_URL = os.getenv("MONGODB_URL")
 DB_NAME = "crop_disease_db"
 
 client = MongoClient(MONGO_URL)

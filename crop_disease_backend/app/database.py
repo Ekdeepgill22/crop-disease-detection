@@ -69,7 +69,8 @@ async def ensure_connection():
             await connect_to_mongo()
         else:
             # Test if connection is still alive
-            await database.client.admin.command('ping')
+            if database.client is not None:
+                await database.client.admin.command('ping')
     except Exception as e:
         logger.error(f"Database connection test failed: {e}")
         # Try to reconnect

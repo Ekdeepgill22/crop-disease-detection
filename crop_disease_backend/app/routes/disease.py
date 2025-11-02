@@ -9,7 +9,7 @@ from typing import List
 router = APIRouter(prefix="/disease", tags=["disease detection"])
 disease_controller = DiseaseController()
 
-@router.post("/predict", response_model=PredictionResult)
+@router.post("/predict")
 async def predict_disease(
     file: UploadFile = File(..., description="Crop image (JPEG/PNG)"),
     crop_type: str = Form(..., description="Type of crop (e.g., tomato, potato)"),
@@ -40,6 +40,14 @@ async def get_diagnosis_by_id(
 ):
     """Get specific diagnosis by ID"""
     return await disease_controller.get_diagnosis_by_id(diagnosis_id, current_user)
+
+@router.delete("/diagnosis/{diagnosis_id}", response_model=dict)
+async def delete_diagnosis(
+    diagnosis_id: str,
+    current_user: UserInDB = Depends(get_current_active_user)
+):
+    """Delete a diagnosis and its image file"""
+    return await disease_controller.delete_diagnosis(diagnosis_id, current_user)
 
 @router.get("/supported-crops")
 async def get_supported_crops():

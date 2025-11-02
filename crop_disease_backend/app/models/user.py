@@ -4,21 +4,26 @@ from typing import Optional
 from datetime import datetime
 from bson import ObjectId
 
+from bson import ObjectId
+
 class PyObjectId(ObjectId):
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(cls, _source, _handler):
+        from pydantic_core import core_schema
+        return core_schema.no_info_after_validator_function(
+            cls.validate,
+            core_schema.str_schema(),
+            serialization=core_schema.to_string_ser_schema()
+        )
 
     @classmethod
     def validate(cls, v):
         if not ObjectId.is_valid(v):
-            raise ValueError("Invalid objectid")
+            raise ValueError("Invalid ObjectId")
         return ObjectId(v)
 
-    @classmethod
-    def __get_pydantic_json_schema__(cls, field_schema):
-        field_schema.update(type="string")
-        return field_schema
+    def __str__(self):
+        return str(super())
 
 class UserCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)

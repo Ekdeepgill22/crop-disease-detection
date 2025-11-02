@@ -6,15 +6,21 @@ import { Button } from "@/components/ui/button";
 import { History as HistoryIcon, Calendar, Leaf, Loader2, Eye, AlertTriangle } from "lucide-react";
 import api from "@/lib/api";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 
 async function fetchHistory() {
   const { data } = await api.get("/disease/history");
   return data;
 }
 
+async function deleteDiagnosis(id: string) {
+  await api.delete(`/disease/diagnosis/${id}`);
+}
+
 export default function History() {
   const navigate = useNavigate();
-  const { data: history, isLoading, isError } = useQuery({
+  const { toast } = useToast();
+  const { data: history, isLoading, isError, refetch } = useQuery({
     queryKey: ["history"],
     queryFn: fetchHistory,
   });
@@ -118,10 +124,27 @@ export default function History() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => navigate(`/advisory?disease=${item.predicted_disease}`)}
+                                onClick={() => navigate(`/advisory?diagnosis_id=${item._id}`)}
                               >
                                 <Eye className="h-4 w-4 mr-2" />
                                 View Advisory
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={async () => {
+                                  if (window.confirm("Are you sure you want to delete this scan? This action cannot be undone.")) {
+                                    try {
+                                      await deleteDiagnosis(item._id);
+                                      toast({ title: "Scan deleted", description: "The scan and its image have been removed." });
+                                      refetch();
+                                    } catch (err: any) {
+                                      toast({ title: "Delete failed", description: err?.response?.data?.detail || "An error occurred.", variant: "destructive" });
+                                    }
+                                  }
+                                }}
+                              >
+                                Delete
                               </Button>
                             </div>
                           </div>

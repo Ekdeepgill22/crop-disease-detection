@@ -58,17 +58,26 @@ def generate_weather_advice(weather_data: Dict[str, Any]) -> WeatherAdvice:
         irrigation_advice = "Maintain regular watering schedule."
     
     if humidity > 80:
-        pest_risk = "High humidity increases fungal disease risk. Monitor crops closely."
+        pest_risk = "High risk of fungal diseases and pests due to high humidity. Monitor crops closely."
     elif humidity < 40:
-        pest_risk = "Low humidity may stress plants. Ensure adequate irrigation."
+        pest_risk = "Low risk of pests, but plants may be stressed by low humidity."
     else:
-        pest_risk = "Humidity levels are good for crop growth."
+        pest_risk = "Low risk of pest activity under current humidity conditions."
     
+    # Humidity advice
+    if humidity > 80:
+        humidity_advice = "Humidity is very high. Watch for fungal diseases and avoid overwatering."
+    elif humidity < 40:
+        humidity_advice = "Humidity is low. Plants may need extra irrigation."
+    else:
+        humidity_advice = "Humidity levels are good for crop growth."
+
     return WeatherAdvice(
         temperature=temp,
         humidity=humidity,
         weather_condition=condition,
         planting_advice=planting_advice,
         irrigation_advice=irrigation_advice,
-        pest_risk=pest_risk
+        pest_risk=pest_risk,
+        humidity_advice=humidity_advice
     )

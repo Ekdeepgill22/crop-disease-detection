@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Upload, Camera, TrendingUp, AlertTriangle, Loader2, CheckCircle, XCircle } from "lucide-react";
 import api from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 
 async function predictDisease(formData: FormData) {
   const { data } = await api.post("/disease/predict", formData, {
@@ -34,8 +35,9 @@ export default function Dashboard() {
   const [cropType, setCropType] = useState<string>("");
   const [predictionResult, setPredictionResult] = useState<any>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const { data: stats } = useQuery({
+  const { data: stats, refetch: refetchStats } = useQuery({
     queryKey: ["dashboardStats"],
     queryFn: fetchDashboardStats,
   });
@@ -49,6 +51,7 @@ export default function Dashboard() {
     mutationFn: predictDisease,
     onSuccess: (data) => {
       setPredictionResult(data);
+      refetchStats();
       toast({
         title: "Analysis Complete",
         description: `Disease: ${data.disease_name}, Confidence: ${(data.confidence_score * 100).toFixed(1)}%`,
@@ -324,14 +327,14 @@ export default function Dashboard() {
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Disease Detected</p>
                             <p className="text-lg font-semibold">
-                              {predictionResult.disease_name.replace(/_/g, ' ')}
+                              {predictionResult.disease_name ? predictionResult.disease_name.replace(/_/g, ' ') : 'N/A'}
                             </p>
                           </div>
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Confidence</p>
                             <div className="flex items-center gap-2">
                               <p className="text-lg font-semibold">
-                                {(predictionResult.confidence_score * 100).toFixed(1)}%
+                                {predictionResult.confidence_score ? (predictionResult.confidence_score * 100).toFixed(1) : 'N/A'}%
                               </p>
                               <Badge 
                                 variant={predictionResult.confidence_score > 0.8 ? "default" : "secondary"}
@@ -342,11 +345,12 @@ export default function Dashboard() {
                           </div>
                         </div>
 
+                        {/* Advisory Section */}
                         {predictionResult.advisory && (
                           <div className="space-y-2">
                             <p className="text-sm font-medium text-muted-foreground">Treatment Recommendations</p>
-                            <div className="bg-white p-4 rounded-lg">
-                              <p className="text-sm mb-2">{predictionResult.advisory.description}</p>
+                            <div className="bg-white p-4 rounded-lg border border-emerald-100">
+                              <p className="text-sm mb-2 font-semibold text-emerald-800">{predictionResult.advisory.description}</p>
                               {predictionResult.advisory.treatment_steps && (
                                 <ol className="list-decimal list-inside space-y-1 text-sm">
                                   {predictionResult.advisory.treatment_steps.map((step: any, index: number) => (
@@ -354,16 +358,33 @@ export default function Dashboard() {
                                   ))}
                                 </ol>
                               )}
+                              {predictionResult.advisory.prevention_tips && (
+                                <div className="mt-3">
+                                  <p className="font-medium text-emerald-700 mb-1">Prevention Tips:</p>
+                                  <ul className="list-disc list-inside text-sm">
+                                    {predictionResult.advisory.prevention_tips.map((tip: string, idx: number) => (
+                                      <li key={idx}>{tip}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
 
                         <Button 
-                          variant="outline" 
+                          variant="outline"
                           className="w-full"
-                          onClick={() => window.open(`/advisory?disease=${predictionResult.disease_name}`, '_blank')}
+                          onClick={() => navigate(`/advisory?diagnosis_id=${predictionResult._id}&disease=${predictionResult.disease_name}&crop_type=${predictionResult.crop_type}`)}
                         >
                           View Detailed Advisory
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="w-full mt-2"
+                          onClick={() => navigate('/history')}
+                        >
+                          View Diagnosis History
                         </Button>
                       </CardContent>
                     </Card>

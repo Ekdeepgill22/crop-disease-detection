@@ -48,10 +48,10 @@ const benefits = [
 ];
 
 const stats = [
-  { label: "Farmers Helped", value: "50,000+" },
-  { label: "Diseases Detected", value: "200+" },
+  { label: "Diseases Detected", value: "50+" },
   { label: "Accuracy Rate", value: "95%" },
-  { label: "Crops Saved", value: "1M+" },
+  { label: "Crops Supported", value: "20+" },
+  { label: "Diagnosis Time", value: "<5sec" },
 ];
 
 export default function Landing() {
@@ -91,7 +91,7 @@ export default function Landing() {
                   <Button
                     variant="outline"
                     size="lg"
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto border-white text-emerald-700 hover:bg-white hover:text-emerald-600"
                   >
                     Sign In
                   </Button>
@@ -304,7 +304,7 @@ export default function Landing() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-emerald-600"
+                  className="w-full sm:w-auto border-white text-emerald-700 hover:bg-white hover:text-emerald-600"
                 >
                   Sign In
                 </Button>
@@ -314,56 +314,13 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 bg-gray-900 text-white">
-        <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-4 gap-8">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600">
-                  <Leaf className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-xl font-bold">KhetAI</span>
-              </div>
-              <p className="text-gray-400">
-                AI-powered crop disease detection and agricultural advisory
-                platform.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="font-semibold">Product</h4>
-              <div className="space-y-2 text-gray-400">
-                <div>Disease Detection</div>
-                <div>Treatment Advisory</div>
-                <div>Weather Insights</div>
-                <div>Analytics</div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="font-semibold">Support</h4>
-              <div className="space-y-2 text-gray-400">
-                <div>Help Center</div>
-                <div>Contact Us</div>
-                <div>Documentation</div>
-                <div>Community</div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="font-semibold">Company</h4>
-              <div className="space-y-2 text-gray-400">
-                <div>About Us</div>
-                <div>Privacy Policy</div>
-                <div>Terms of Service</div>
-                <div>Careers</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 KhetAI. All rights reserved.</p>
+      {/* Copyright Footer */}
+      <footer className="bg-gray-900 text-white">
+        <div className="container mx-auto px-4 flex items-center justify-center" style={{ minHeight: "80px" }}>
+          <div className="border-t border-gray-800 w-full pt-8">
+            <p className="text-center text-gray-400 m-0">
+              &copy; 2025 KhetAI. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>

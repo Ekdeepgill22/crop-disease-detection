@@ -36,3 +36,4 @@ class WeatherAdvice(BaseModel):
     planting_advice: str
     irrigation_advice: str
     pest_risk: str
+    humidity_advice: str = ""
