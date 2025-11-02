@@ -14,6 +14,7 @@ class DashboardController:
         self.db = get_database()
         
         """Get diagnosis history for a user"""
+        self.db = get_database()
         try:
             cursor = self.db.diagnoses.find(
                 {"user_id": str(current_user.id)}
@@ -39,6 +40,7 @@ class DashboardController:
     async def get_user_statistics(self, current_user: UserInDB) -> dict:
         self.db = get_database()
         """Get user statistics"""
+        self.db = get_database()
         try:
             # Total diagnoses
             total_diagnoses = await self.db.diagnoses.count_documents(

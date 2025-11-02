@@ -1,7 +1,7 @@
 # disease_controller.py
 from fastapi import HTTPException, UploadFile
 from PIL import Image
-from app.database import get_database, ensure_connection
+from app.database import get_database, ensure_connection, is_database_connected
 from app.models.user import UserInDB, PyObjectId
 from app.models.diagnosis import DiagnosisCreate, DiagnosisInDB, PredictionResult
 from app.utils.image_utils import save_image, preprocess_image
@@ -67,23 +67,23 @@ class DiseaseController:
     async def _get_db(self):
         """Get database instance with proper error handling and connection check"""
         try:
-            await ensure_connection()
+            if not is_database_connected():
+                logger.warning("Database not connected, attempting to connect...")
+                await ensure_connection()
+            
+            if not is_database_connected():
+                logger.error("Failed to establish database connection")
+                return None
+                
             return get_database()
         except Exception as e:
             logger.error(f"Database connection error: {e}")
-            raise HTTPException(
-                status_code=500, 
-                detail="Database connection is not initialized."
-            )
+            return None
     
     async def predict_disease(self, file: UploadFile, crop_type: str, current_user: UserInDB) -> dict:
         """Predict disease from uploaded image using Kindwise API"""
         try:
             logger.info(f"Starting disease prediction for user {current_user.email}")
-            
-            # Ensure database connection
-            db = await self._get_db()
-            logger.info("Database connection verified")
             
             # Save uploaded image
             file_path, file_url = await save_image(file)
@@ -233,6 +233,10 @@ class DiseaseController:
         """Get user's diagnosis history"""
         try:
             db = await self._get_db()
+            if db is None:
+                logger.warning("Database not available, returning empty history")
+                return []
+            
             cursor = db.diagnoses.find(
                 {"user_id": str(current_user.id)}
             ).sort("created_at", -1).limit(limit)
@@ -244,12 +248,16 @@ class DiseaseController:
             return diagnoses
         except Exception as e:
             logger.error(f"Failed to fetch diagnosis history: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Failed to fetch diagnosis history: {str(e)}")
+            # Return empty list instead of failing
+            return []
     
     async def get_diagnosis_by_id(self, diagnosis_id: str, current_user: UserInDB):
         """Get specific diagnosis by ID"""
         try:
             db = await self._get_db()
+            if db is None:
+                raise HTTPException(status_code=503, detail="Database service unavailable")
+            
             diagnosis = await db.diagnoses.find_one({
                 "_id": ObjectId(diagnosis_id),
                 "user_id": str(current_user.id)
