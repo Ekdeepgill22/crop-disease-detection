@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 # Create FastAPI app
 app = FastAPI(
     title="Crop Disease Detection API",
-    description="API for crop disease detection and farmer advisory system",
-    version="1.0.0",
+    description="AI-powered API for crop disease detection and farmer advisory system using Kindwise and Gemini AI",
+    version="2.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -62,7 +62,7 @@ async def startup_event():
         db_connected = await connect_to_mongo()
         
         if db_connected:
-            # Initialize default advisories only if DB is connected
+            # Initialize minimal default advisories (optional since we use Gemini)
             try:
                 advisory_controller = AdvisoryController()
                 await advisory_controller.initialize_default_advisories()
@@ -71,6 +71,17 @@ async def startup_event():
                 logger.warning(f"Failed to initialize default advisories: {e}")
         else:
             logger.warning("MongoDB not available - running in fallback mode")
+        
+        # Check API configurations
+        if settings.KINDWISE_API_KEY and settings.KINDWISE_API_KEY != "your-kindwise-api-key-here":
+            logger.info("✓ Kindwise API configured")
+        else:
+            logger.warning("⚠ Kindwise API key not configured - using mock predictions")
+        
+        if settings.GEMINI_API_KEY and settings.GEMINI_API_KEY != "your-gemini-api-key-here":
+            logger.info("✓ Gemini AI configured for advisory generation")
+        else:
+            logger.warning("⚠ Gemini API key not configured - using fallback advisories")
         
         logger.info("Application startup completed")
     except Exception as e:
@@ -97,37 +108,75 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.get("/")
 async def root():
-    """Root endpoint"""
+    """Root endpoint with system status"""
+    gemini_configured = bool(settings.GEMINI_API_KEY and settings.GEMINI_API_KEY != "your-gemini-api-key-here")
+    kindwise_configured = bool(settings.KINDWISE_API_KEY and settings.KINDWISE_API_KEY != "your-kindwise-api-key-here")
+    
     return {
         "message": "Crop Disease Detection API",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "docs": "/docs",
-        "database_status": "connected" if is_database_connected() else "disconnected"
+        "features": {
+            "disease_detection": "Kindwise API" if kindwise_configured else "Mock Mode",
+            "advisory_generation": "Gemini AI" if gemini_configured else "Fallback Mode",
+            "database": "connected" if is_database_connected() else "disconnected"
+        },
+        "endpoints": {
+            "disease_detection": "/disease/predict",
+            "diagnosis_history": "/disease/history",
+            "advisory": "/advisory/disease/{disease_name}",
+            "weather_advice": "/advisory/weather"
+        }
     }
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
+    """Health check endpoint with detailed status"""
     try:
-        if is_database_connected():
+        db_connected = is_database_connected()
+        if db_connected:
             await ensure_connection()
-            return {
-                "status": "healthy", 
-                "database": "connected",
-                "mongodb_url": settings.MONGODB_URL.replace("mongodb://", "mongodb://***:***@") if "://" in settings.MONGODB_URL else "***"
-            }
-        else:
-            return {
-                "status": "degraded", 
-                "database": "disconnected",
-                "message": "API is functional but database is not available",
-                "mongodb_url": settings.MONGODB_URL.replace("mongodb://", "mongodb://***:***@") if "://" in settings.MONGODB_URL else "***"
-            }
+        
+        gemini_status = "configured" if settings.GEMINI_API_KEY and settings.GEMINI_API_KEY != "your-gemini-api-key-here" else "not_configured"
+        kindwise_status = "configured" if settings.KINDWISE_API_KEY and settings.KINDWISE_API_KEY != "your-kindwise-api-key-here" else "not_configured"
+        
+        overall_status = "healthy" if db_connected and gemini_status == "configured" else "degraded"
+        
+        return {
+            "status": overall_status,
+            "services": {
+                "database": "connected" if db_connected else "disconnected",
+                "kindwise_api": kindwise_status,
+                "gemini_ai": gemini_status,
+                "weather_api": "configured" if settings.WEATHER_API_KEY else "not_configured"
+            },
+            "message": "All systems operational" if overall_status == "healthy" else "Some services unavailable"
+        }
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         return {
-            "status": "unhealthy", 
-            "database": "error", 
-            "error": str(e),
-            "mongodb_url": settings.MONGODB_URL.replace("mongodb://", "mongodb://***:***@") if "://" in settings.MONGODB_URL else "***"
+            "status": "unhealthy",
+            "error": str(e)
         }
+
+@app.get("/api-info")
+async def api_info():
+    """Get information about API configuration"""
+    return {
+        "kindwise_api": {
+            "configured": bool(settings.KINDWISE_API_KEY and settings.KINDWISE_API_KEY != "your-kindwise-api-key-here"),
+            "purpose": "Disease detection from crop images",
+            "fallback": "Mock predictions available when not configured"
+        },
+        "gemini_ai": {
+            "configured": bool(settings.GEMINI_API_KEY and settings.GEMINI_API_KEY != "your-gemini-api-key-here"),
+            "model": settings.GEMINI_MODEL,
+            "purpose": "Generate comprehensive disease advisories",
+            "fallback": "Basic advisories available when not configured"
+        },
+        "weather_api": {
+            "configured": bool(settings.WEATHER_API_KEY),
+            "purpose": "Weather-based agricultural advice",
+            "fallback": "Dummy weather data available when not configured"
+        }
+    }

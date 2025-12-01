@@ -85,8 +85,8 @@ async def create_indexes():
         
         # User collection indexes
         try:
-            await db.users.create_index("email", unique=True)
-            await db.users.create_index("phone_number", unique=True)
+            await db.users.create_index("email", unique=None)
+            await db.users.create_index("phone_number", unique=None)
         except Exception as e:
             logger.warning(f"Error creating user indexes (may already exist): {e}")
         

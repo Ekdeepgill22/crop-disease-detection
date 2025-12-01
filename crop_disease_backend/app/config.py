@@ -21,6 +21,10 @@ class Settings:
     
     # Kindwise API
     KINDWISE_API_KEY: str = os.getenv("KINDWISE_API_KEY", "")
+
+     # Gemini API
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    GEMINI_MODEL: str = "gemini-2.5-flash" 
         
     # Weather API (optional)
     WEATHER_API_KEY: str = os.getenv("WEATHER_API_KEY", "")
