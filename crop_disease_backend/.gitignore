@@ -92,3 +92,7 @@ credentials.json
 # Production build
 dist/
 build/
+
+test_mongodb.py
+test_kindwise.py
+test_gemini.py
