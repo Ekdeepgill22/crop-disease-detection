@@ -116,7 +116,7 @@ export default function History() {
                         {item.image_url && (
                           <div className="flex items-center justify-between">
                             <img 
-                              src={`http://localhost:8000${item.image_url}`} 
+                              src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${item.image_url}`}
                               alt="Analyzed crop" 
                               className="h-20 w-20 object-cover rounded-lg"
                             />
