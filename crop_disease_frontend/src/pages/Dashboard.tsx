@@ -225,6 +225,26 @@ export default function Dashboard() {
                 </p>
               </CardHeader>
               <CardContent>
+
+                {/* Crop Type Selection */}
+                  
+                    <div className="space-y-2 mb-2">
+                      <label className="text-sm font-medium">Crop Type</label>
+                      <Select value={cropType} onValueChange={setCropType}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select the type of crop in the image" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {supportedCrops?.crops?.map((crop: string) => (
+                            <SelectItem key={crop} value={crop}>
+                              {crop.charAt(0).toUpperCase() + crop.slice(1)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  
+                  
                 <div className="space-y-6">
                   {/* File Upload Area */}
                   <div className="text-center">
@@ -271,25 +291,6 @@ export default function Dashboard() {
                       )}
                     </div>
                   </div>
-
-                  {/* Crop Type Selection */}
-                  {selectedFile && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Crop Type</label>
-                      <Select value={cropType} onValueChange={setCropType}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select the type of crop in the image" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {supportedCrops?.crops?.map((crop: string) => (
-                            <SelectItem key={crop} value={crop}>
-                              {crop.charAt(0).toUpperCase() + crop.slice(1)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
 
                   {/* Analysis Button */}
                   {selectedFile && cropType && (

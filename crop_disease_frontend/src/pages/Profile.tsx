@@ -2,11 +2,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Layout } from "@/components/layout/Layout";
 import { UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert } from "@/components/ui/alert";
+import { Toast } from "@radix-ui/react-toast";
 
 export default function Profile() {
   const { user } = useAuth();
-
-  return (
+  const handlephonenumber = async()=>{
+    if(user.phone_number.length !== 10){
+      console.error('Enter a valid number');
+    }
+    }
+   return (
     <Layout isAuthenticated={true}>
       <div
         className="min-h-screen relative"
@@ -52,4 +58,4 @@ export default function Profile() {
       </div>
     </Layout>
   );
-} 
+}

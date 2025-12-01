@@ -48,10 +48,10 @@ const benefits = [
 ];
 
 const stats = [
-  { label: "Diseases Detected", value: "50+" },
+  { label: "Diseases Detected", value: "250+" },
   { label: "Accuracy Rate", value: "95%" },
   { label: "Crops Supported", value: "20+" },
-  { label: "Diagnosis Time", value: "<5sec" },
+  { label: "Diagnosis Time", value: "<10sec" },
 ];
 
 export default function Landing() {
@@ -303,8 +303,8 @@ export default function Landing() {
               <Link to="/login">
                 <Button
                   size="lg"
-                  variant="outline"
-                  className="w-full sm:w-auto border-white text-emerald-700 hover:bg-white hover:text-emerald-600"
+                  variant="secondary"
+                  className="w-full sm:w-auto"
                 >
                   Sign In
                 </Button>
@@ -317,7 +317,7 @@ export default function Landing() {
       {/* Copyright Footer */}
       <footer className="bg-gray-900 text-white">
         <div className="container mx-auto px-4 flex items-center justify-center" style={{ minHeight: "80px" }}>
-          <div className="border-t border-gray-800 w-full pt-8">
+          <div>
             <p className="text-center text-gray-400 m-0">
               &copy; 2025 KhetAI. All rights reserved.
             </p>
