@@ -45,3 +45,5 @@ secrets/
 
 # Netlify
 .netlify
+.cursor
+cypress
